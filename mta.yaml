@@ -1,0 +1,81 @@
+_schema-version: "3.2"
+ID: s4Proj
+version: 0.0.1
+modules:
+- name: s4Proj-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: uaa_s4Proj
+    parameters:
+      service-key:
+        name: uaa_s4Proj-key
+  - name: s4Proj_html_repo_host
+    parameters:
+      service-key:
+        name: s4Proj_html_repo_host-key
+  - name: s4Proj-destination-service
+    parameters:
+      content-target: true
+  parameters:
+    content:
+      subaccount:
+        destinations:
+        - Name: bpManaged_s4Proj_html_repo_host
+          ServiceInstanceName: s4Proj-html5-app-host-service
+          ServiceKeyName: s4Proj_html_repo_host-key
+          sap.cloud.service: bpManaged
+        - Authentication: OAuth2UserTokenExchange
+          Name: bpManaged_uaa_s4Proj
+          ServiceInstanceName: s4Proj-xsuaa-service
+          ServiceKeyName: uaa_s4Proj-key
+          sap.cloud.service: bpManaged
+        existing_destinations_policy: update
+  build-parameters:
+    no-source: true
+- name: s4Proj_ui_deployer
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: s4Proj_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - BP-content.zip
+      name: BP
+      target-path: resources/
+- name: BP
+  type: html5
+  path: BP
+  build-parameters:
+    builder: custom
+    commands:
+    - npm run build
+    supported-platforms: []
+resources:
+- name: s4Proj-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: destination
+    service-name: s4Proj-destination-service
+    service-plan: lite
+- name: s4Proj_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: s4Proj-html5-app-host-service
+    service-plan: app-host
+- name: uaa_s4Proj
+  type: org.cloudfoundry.managed-service
+  parameters:
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: s4Proj-xsuaa-service
+    service-plan: application
+build-parameters:
+  before-all:
+  - builder: custom
+    commands:
+    - npm install
